@@ -73,6 +73,7 @@ object Defaults {
   val LogRollHours = 24 * 7
   val LogRollJitterHours = 0
   val LogRetentionHours = 24 * 7
+  val LogRetentionTimestamp = 0
 
   val LogRetentionBytes = -1L
   val LogCleanupIntervalMs = 5 * 60 * 1000L
@@ -243,6 +244,7 @@ object KafkaConfig {
   val LogRetentionTimeHoursProp = "log.retention.hours"
 
   val LogRetentionBytesProp = "log.retention.bytes"
+  val LogRetentionTimestampProp = "log.retention.min.timestamp"
   val LogCleanupIntervalMsProp = "log.retention.check.interval.ms"
   val LogCleanupPolicyProp = "log.cleanup.policy"
   val LogCleanerThreadsProp = "log.cleaner.threads"
@@ -419,6 +421,7 @@ object KafkaConfig {
   val LogRetentionTimeMinsDoc = "The number of minutes to keep a log file before deleting it (in minutes), secondary to " + LogRetentionTimeMillisProp + " property. If not set, the value in " + LogRetentionTimeHoursProp + " is used"
   val LogRetentionTimeHoursDoc = "The number of hours to keep a log file before deleting it (in hours), tertiary to " + LogRetentionTimeMillisProp + " property"
 
+  val LogRetentionTimestampDoc = "The minimum timestamp for messages to be retained."
   val LogRetentionBytesDoc = "The maximum size of the log before deleting it"
   val LogCleanupIntervalMsDoc = "The frequency in milliseconds that the log cleaner checks whether any log is eligible for deletion"
   val LogCleanupPolicyDoc = "The default cleanup policy for segments beyond the retention window, must be either \"delete\" or \"compact\""
@@ -608,6 +611,7 @@ object KafkaConfig {
       .define(LogRetentionTimeMinutesProp, INT, null, HIGH, LogRetentionTimeMinsDoc)
       .define(LogRetentionTimeHoursProp, INT, Defaults.LogRetentionHours, HIGH, LogRetentionTimeHoursDoc)
 
+        .define(LogRetentionTimestampProp, LONG, Defaults.LogRetentionTimestamp, MEDIUM, LogRetentionTimestampDoc)
       .define(LogRetentionBytesProp, LONG, Defaults.LogRetentionBytes, HIGH, LogRetentionBytesDoc)
       .define(LogCleanupIntervalMsProp, LONG, Defaults.LogCleanupIntervalMs, atLeast(1), MEDIUM, LogCleanupIntervalMsDoc)
       .define(LogCleanupPolicyProp, STRING, Defaults.LogCleanupPolicy, in(Defaults.Compact, Defaults.Delete), MEDIUM, LogCleanupPolicyDoc)
@@ -814,6 +818,7 @@ class KafkaConfig(val props: java.util.Map[_, _], doLog: Boolean) extends Abstra
   val offsetsRetentionMinutes = getInt(KafkaConfig.OffsetsRetentionMinutesProp)
   val offsetsRetentionCheckIntervalMs = getLong(KafkaConfig.OffsetsRetentionCheckIntervalMsProp)
   val logRetentionBytes = getLong(KafkaConfig.LogRetentionBytesProp)
+  val logRetentionTimestamp = getLong(KafkaConfig.LogRetentionTimestampProp)
   val logCleanerDedupeBufferSize = getLong(KafkaConfig.LogCleanerDedupeBufferSizeProp)
   val logCleanerDedupeBufferLoadFactor = getDouble(KafkaConfig.LogCleanerDedupeBufferLoadFactorProp)
   val logCleanerIoBufferSize = getInt(KafkaConfig.LogCleanerIoBufferSizeProp)

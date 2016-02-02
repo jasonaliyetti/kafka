@@ -446,6 +446,12 @@ class LogManager(val logDirs: Array[File],
     log.deleteOldSegments(shouldDelete)
   }
 
+  private def cleanupSegmentsBeforeMinTimestamp(log: Log): Int = {
+    if(log.config.retentionMinTimestamp <= 0)
+      return 0
+    log.deleteOldSegments(segment => segment.log.nonEmpty && segment.log.last.message.timestamp < log.config.retentionMinTimestamp)
+  }
+
   /**
    * Delete any eligible logs. Return the number of segments deleted.
    */
@@ -455,7 +461,7 @@ class LogManager(val logDirs: Array[File],
     val startMs = time.milliseconds
     for(log <- allLogs; if !log.config.compact) {
       debug("Garbage collecting '" + log.name + "'")
-      total += cleanupExpiredSegments(log) + cleanupSegmentsToMaintainSize(log)
+      total += cleanupExpiredSegments(log) + cleanupSegmentsToMaintainSize(log) + cleanupSegmentsBeforeMinTimestamp(log)
     }
     debug("Log cleanup completed. " + total + " files deleted in " +
                   (time.milliseconds - startMs) / 1000 + " seconds")
