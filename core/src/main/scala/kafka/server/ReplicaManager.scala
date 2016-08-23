@@ -110,6 +110,7 @@ class ReplicaManager(val config: KafkaConfig,
   /* epoch of the controller that last changed the leader */
   @volatile var controllerEpoch: Int = KafkaController.InitialControllerEpoch - 1
   private val localBrokerId = config.brokerId
+  private val leaderEligible = config.brokerLeaderEligible
   private val allPartitions = new Pool[(String, Int), Partition]
   private val replicaStateChangeLock = new Object
   val replicaFetcherManager = new ReplicaFetcherManager(config, this, metrics, jTime, threadNamePrefix)
@@ -644,10 +645,18 @@ class ReplicaManager(val config: KafkaConfig,
         }
         val partitionsToBeFollower = (partitionState -- partitionsTobeLeader.keys)
 
-        val partitionsBecomeLeader = if (!partitionsTobeLeader.isEmpty)
+        if (!leaderEligible) {
+          partitionsTobeLeader.foreach {
+            case (partition, stateInfo) =>
+              responseMap.put(new TopicPartition(partition.topic, partition.partitionId), Errors.UNKNOWN.code)
+          }
+        }
+
+        val partitionsBecomeLeader = if (!partitionsTobeLeader.isEmpty && leaderEligible)
           makeLeaders(controllerId, controllerEpoch, partitionsTobeLeader, correlationId, responseMap)
         else
           Set.empty[Partition]
+
         val partitionsBecomeFollower = if (!partitionsToBeFollower.isEmpty)
           makeFollowers(controllerId, controllerEpoch, partitionsToBeFollower, correlationId, responseMap, metadataCache)
         else
